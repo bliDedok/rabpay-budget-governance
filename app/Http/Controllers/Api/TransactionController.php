@@ -25,14 +25,19 @@ class TransactionController extends Controller
         ]);
 
         return DB::transaction(function () use ($request) {
-            $fieldUnit = FieldUnit::where('rfid_uid', $request->rfid_uid)->first();
+            $card = \App\Models\FieldUnitCard::with('fieldUnit.virtualAccount')
+                ->where('rfid_uid', strtoupper($request->rfid_uid))
+                ->where('status', 'active')
+                ->first();
 
-            if (!$fieldUnit) {
+            if (!$card) {
                 return response()->json([
                     'status' => 'rejected',
-                    'message' => 'Kartu tidak terdaftar.',
+                    'message' => 'Kartu tidak terdaftar atau tidak aktif.',
                 ], 404);
             }
+
+            $fieldUnit = $card->fieldUnit;
 
             $vendor = Vendor::where('code', $request->vendor_code)
                 ->where('status', 'active')
@@ -132,19 +137,47 @@ class TransactionController extends Controller
             ]);
 
             return response()->json([
-                'status' => $transactionStatus,
-                'message' => $message,
-                'data' => [
+            'status' => $transactionStatus,
+            'message' => $message,
+            'data' => [
+                'transaction_code' => $transaction->transaction_code,
+                'field_unit' => $fieldUnit->name,
+                'vendor' => $vendor->name,
+                'item' => $transaction->item_name,
+                'amount' => $transaction->amount,
+                'risk_score' => $riskScore,
+                'risk_level' => $riskLevel,
+                'remaining_balance' => $virtualAccount->fresh()->current_balance,
+                'status' => $transaction->status,
+                'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),
+            ],
+        ]);
+        });
+    }
+
+    public function latest()
+    {
+        $transactions = \App\Models\Transaction::with(['fieldUnit', 'vendor', 'riskScore'])
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(function ($transaction) {
+                return [
                     'transaction_code' => $transaction->transaction_code,
-                    'field_unit' => $fieldUnit->name,
-                    'vendor' => $vendor->name,
+                    'field_unit' => $transaction->fieldUnit->name ?? '-',
+                    'vendor' => $transaction->vendor->name ?? '-',
                     'item' => $transaction->item_name,
                     'amount' => $transaction->amount,
-                    'risk_score' => $riskScore,
-                    'risk_level' => $riskLevel,
-                    'remaining_balance' => $virtualAccount->fresh()->current_balance,
-                ],
-            ]);
-        });
+                    'status' => $transaction->status,
+                    'risk_score' => optional($transaction->riskScore)->score ?? 0,
+                    'risk_level' => optional($transaction->riskScore)->risk_level ?? 'low',
+                    'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $transactions,
+        ]);
     }
 }

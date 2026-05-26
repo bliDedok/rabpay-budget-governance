@@ -5,4 +5,6 @@ use App\Http\Controllers\Api\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/check-card', [RfidController::class, 'checkCard']);
+Route::get('/latest-card-tap', [RfidController::class, 'latestTap']);
 Route::post('/transactions', [TransactionController::class, 'store']);
+Route::get('/transactions/latest', [TransactionController::class, 'latest']);
