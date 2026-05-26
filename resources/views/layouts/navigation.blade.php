@@ -67,9 +67,21 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+            <x-nav-link :href="route('transactions.simulation')" :active="request()->routeIs('transactions.simulation')">
+                Simulasi Transaksi
+            </x-nav-link>
+
+            <x-nav-link :href="route('monitoring.audit')" :active="request()->routeIs('monitoring.audit')">
+                Audit Trail
+            </x-nav-link>
+
+            <x-nav-link :href="route('monitoring.risk')" :active="request()->routeIs('monitoring.risk')">
+                Risk Monitoring
+            </x-nav-link>
+
+            <x-nav-link :href="route('vendors.qr')" :active="request()->routeIs('vendors.qr')">
+                QR Vendor
+            </x-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
