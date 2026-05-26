@@ -30,7 +30,7 @@ class FieldUnit extends Model
     }
 
     public function cards()
-{
-    return $this->hasMany(FieldUnitCard::class);
-}
+    {
+        return $this->hasMany(FieldUnitCard::class);
+    }
 }

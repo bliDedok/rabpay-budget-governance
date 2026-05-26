@@ -137,19 +137,47 @@ class TransactionController extends Controller
             ]);
 
             return response()->json([
-                'status' => $transactionStatus,
-                'message' => $message,
-                'data' => [
+            'status' => $transactionStatus,
+            'message' => $message,
+            'data' => [
+                'transaction_code' => $transaction->transaction_code,
+                'field_unit' => $fieldUnit->name,
+                'vendor' => $vendor->name,
+                'item' => $transaction->item_name,
+                'amount' => $transaction->amount,
+                'risk_score' => $riskScore,
+                'risk_level' => $riskLevel,
+                'remaining_balance' => $virtualAccount->fresh()->current_balance,
+                'status' => $transaction->status,
+                'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),
+            ],
+        ]);
+        });
+    }
+
+    public function latest()
+    {
+        $transactions = \App\Models\Transaction::with(['fieldUnit', 'vendor', 'riskScore'])
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(function ($transaction) {
+                return [
                     'transaction_code' => $transaction->transaction_code,
-                    'field_unit' => $fieldUnit->name,
-                    'vendor' => $vendor->name,
+                    'field_unit' => $transaction->fieldUnit->name ?? '-',
+                    'vendor' => $transaction->vendor->name ?? '-',
                     'item' => $transaction->item_name,
                     'amount' => $transaction->amount,
-                    'risk_score' => $riskScore,
-                    'risk_level' => $riskLevel,
-                    'remaining_balance' => $virtualAccount->fresh()->current_balance,
-                ],
-            ]);
-        });
+                    'status' => $transaction->status,
+                    'risk_score' => optional($transaction->riskScore)->score ?? 0,
+                    'risk_level' => optional($transaction->riskScore)->risk_level ?? 'low',
+                    'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $transactions,
+        ]);
     }
 }
