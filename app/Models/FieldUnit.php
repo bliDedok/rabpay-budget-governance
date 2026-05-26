@@ -28,4 +28,9 @@ class FieldUnit extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function cards()
+{
+    return $this->hasMany(FieldUnitCard::class);
+}
 }

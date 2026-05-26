@@ -25,14 +25,19 @@ class TransactionController extends Controller
         ]);
 
         return DB::transaction(function () use ($request) {
-            $fieldUnit = FieldUnit::where('rfid_uid', $request->rfid_uid)->first();
+            $card = \App\Models\FieldUnitCard::with('fieldUnit.virtualAccount')
+                ->where('rfid_uid', strtoupper($request->rfid_uid))
+                ->where('status', 'active')
+                ->first();
 
-            if (!$fieldUnit) {
+            if (!$card) {
                 return response()->json([
                     'status' => 'rejected',
-                    'message' => 'Kartu tidak terdaftar.',
+                    'message' => 'Kartu tidak terdaftar atau tidak aktif.',
                 ], 404);
             }
+
+            $fieldUnit = $card->fieldUnit;
 
             $vendor = Vendor::where('code', $request->vendor_code)
                 ->where('status', 'active')
